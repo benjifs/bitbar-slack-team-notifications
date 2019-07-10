@@ -101,13 +101,20 @@ function slack_request(URL, query) {
 			return Promise.reject(res.body.error);
 		})
 		.catch((err) => {
+			debug('ERROR: ' + err);
+			debug('  ' + URL);
+			debug('  ' + JSON.stringify(query));
 			errors.push(URL + ': ' + err + ' | color=red');
 		});
 }
 
 function output() {
 	unread_count = unread_count > 10 ? '10+' : unread_count > 0 ? unread_count : '';
-	console.log(unread_count + ' | ' + (DARK_MODE ? SLACK_ICON_W : SLACK_ICON_B));
+	if (errors.length > 0) {
+		console.log('! |color=red ' + (DARK_MODE ? SLACK_ICON_W : SLACK_ICON_B));
+	} else {
+		console.log(unread_count + ' | ' + (DARK_MODE ? SLACK_ICON_W : SLACK_ICON_B));
+	}
 
 	if (Object.keys(slack_output).length) {
 		for (let i in slack_output) {
@@ -179,7 +186,6 @@ async function run() {
 	}
 
 	for (let i in tokens) {
-		debug('Fetching channels for ' + tokens[i]);
 		await get_team_notifications(tokens[i]);
 	}
 	output();
@@ -216,6 +222,7 @@ function get_team_notifications(token) {
 }
 
 function get_team_info(token) {
+	debug('Fetching team info for ' + token);
 	return slack_request(SLACK_TEAM + SLACK_INFO, {
 		'token': token
 	})
@@ -227,6 +234,7 @@ function get_team_info(token) {
 }
 
 function get_team_channels(token) {
+	debug('Fetching channels for ' + token);
 	return slack_request(SLACK_USER_CONVERSATIONS, {
 		'token': token,
 		'exclude_archived': true,
@@ -241,6 +249,7 @@ function get_team_channels(token) {
 }
 
 function get_user(user, token) {
+	debug('Fetch user info for ' + user);
 	return slack_request(SLACK_USERS + SLACK_INFO, {
 		'token': token,
 		'user': user
@@ -314,7 +323,6 @@ function is_channel_unread(channel, token) {
 	// join/leave messages)
 	if (channel && channel.unread_count_display > 0) {
 		if (channel.is_im) {
-			debug('Fetch user info for ' + channel.user);
 			return get_user(channel.user, token)
 				.then((user) => {
 					if (user) {
