@@ -20,6 +20,10 @@ const DARK_MODE = process.env.BitBarDarkMode;
 const DEBUG = process.argv.indexOf('--debug') > 0;
 const SCRIPT = process.argv[1];
 
+// Slack App Credentials
+const SLACK_OAUTH_AUTHORIZE = 'https://slack.com/oauth/authorize?scope=client&client_id=';
+const SLACK_CLIENT_ID = '11708641376.684689498789';
+
 // Slack API
 const SLACK_API = 'https://slack.com/api/';
 const SLACK_CHANNELS = 'channels';
@@ -185,6 +189,7 @@ function channel_output(channel) {
 async function run() {
 	if (typeof tokens === 'undefined' || !tokens || !tokens.length) {
 		errors.push('Missing Slack Legacy Token | color=red href=https://api.slack.com/custom-integrations/legacy-tokens');
+		errors.push('Generate OAuth Token | color=red href=' + SLACK_OAUTH_AUTHORIZE + SLACK_CLIENT_ID);
 		return output();
 	}
 
