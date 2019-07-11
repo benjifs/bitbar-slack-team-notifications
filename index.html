@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<link rel="stylesheet" href="https://cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-default.min.css">
+		<title>Slack OAuth for Bitbar</title>
+
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<style>
+body {
+	background: #F0F0F0;
+}
+.content {
+	padding: 10px;
+	margin: 10px auto;
+	text-align: center;
+	background: #F8F8F8;
+}
+#error_message {
+	color: #e53935;
+}
+		</style>
+	</head>
+	<body>
+		<div class="content col-sm-11 col-md-8">
+			<div id="spinner" class="spinner"></div>
+
+			<div id="success" style="display: none;">
+				<h3>Success</h3>
+				<h4>Copy the following token to <code>.tokens.js</code></h4>
+				<code id="token"></code>
+			</div>
+			<div id="error" style="display: none;">
+				<h3>The following error has occurred:</h3>
+				<p id="error_message"></p>
+			</div>
+			<hr />
+			<div style="text-align: center;">
+				<a class="button" href="https://getbitbar.com/">Get Bitbar</a>
+			</div>
+			<div style="text-align: center;">
+				<a class="button" href="https://github.com/benjifs/bitbar-slack-team-notifications">Get the Bitbar Slack Team Notifications plugin</a>
+			</div>
+		</div>
+
+		<script>
+			var url = new URL(window.location.href);
+			var code = url.searchParams.get("code");
+			if (code) {
+				// Easiest way to do this.
+				// Replace CLIENT_ID and CLIENT_SECRET with your apps
+				var CLIENT_ID = "11708641376.684689498789";
+				var CLIENT_SECRET = "16e74f938de336e307f5e25e1d6a9927";
+
+				var xhr = new XMLHttpRequest();
+				xhr.onreadystatechange = function() {
+					if (this.readyState != 4) return;
+					if (this.status == 200) {
+						document.getElementById("spinner").style.display = "none";
+						var data = JSON.parse(this.responseText);
+						if (data.ok) {
+							document.getElementById("success").style.display = "block";
+							document.getElementById("token").innerHTML = data.access_token;
+						} else {
+							console.log(data);
+							document.getElementById("error").style.display = "block";
+							document.getElementById("error_message").innerHTML = data.error;
+						}
+					}
+				}
+				xhr.open("POST", "https://slack.com/api/oauth.access?client_id=" + CLIENT_ID + "&client_secret=" + CLIENT_SECRET + "&code=" + code, true);
+				xhr.send();
+			} else {
+				document.getElementById("spinner").style.display = "none";
+				document.getElementById("error").style.display = "block";
+				document.getElementById("error_message").innerHTML = "Missing code";
+			}
+		</script>
+	</body>
+</html>
+
