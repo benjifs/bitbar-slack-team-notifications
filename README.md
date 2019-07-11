@@ -27,6 +27,7 @@ module.exports = [
 ```
 
 If you cannot use Slack Legacy Tokens, you can generate a token by using [OAuth](https://api.slack.com/docs/oauth). In order to use OAuth to generate a token it is **recommended** you create your own [Slack app](https://api.slack.com). There is a sample app created to show what the process would be like but ideally, you would create your own app. The app will need to have the following permissions:
+
 |Permission|Reason|
 |---|---|
 |`channels:read`|Check channel for unread messages|
@@ -39,4 +40,5 @@ If you cannot use Slack Legacy Tokens, you can generate a token by using [OAuth]
 |`mpim:write`|Mark mpim as read|
 |`users:read`|If unread IM, get username for user|
 |`team:read`|Get team name|
+
 The app should also have a valid redirect URL that will received `code` as a GET parameter and then makes a call to Slack's [oauth.access](https://api.slack.com/methods/oauth.access) method to get the final token. You can see a basic sample of how this is handled in the [index.html](https://github.com/benjifs/bitbar-slack-team-notifications/blob/master/index.html) for this plugin.
