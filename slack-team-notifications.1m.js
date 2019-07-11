@@ -4,7 +4,7 @@
 
 
 // <bitbar.title>Slack Team Notifications</bitbar.title>
-// <bitbar.version>v1.0.2</bitbar.version>
+// <bitbar.version>v1.0.3</bitbar.version>
 // <bitbar.author>Benji Encalada Mora</bitbar.author>
 // <bitbar.author.github>benjifs</bitbar.author.github>
 // <bitbar.image>https://i.imgur.com/x1SoIto.jpg</bitbar.image>
@@ -26,15 +26,16 @@ const SLACK_CLIENT_ID = '11708641376.684689498789';
 
 // Slack API
 const SLACK_API = 'https://slack.com/api/';
+const SLACK_CONVERSATIONS = 'conversations';
 const SLACK_CHANNELS = 'channels';
 const SLACK_GROUPS = 'groups';
-const SLACK_CONVERSATIONS = 'conversations';
 const SLACK_IM = 'im';
 const SLACK_TEAM = 'team';
 const SLACK_USERS = 'users';
-const SLACK_USER_CONVERSATIONS = 'users.conversations';
 const SLACK_INFO = '.info';
+const SLACK_LIST = '.list';
 const SLACK_MARK = '.mark';
+const SLACK_HISTORY = '.history';
 
 // ICONS {
 // Original Slack icon (unused)
@@ -170,20 +171,27 @@ function channel_output(channel) {
 	let href = 'slack://channel?team=' + channel.team + '&id=' + channel.id;
 
 	slack_output[channel.token].notifications.push(output_str + '|font=Menlo size=13 href=' + href);
-	slack_output[channel.token].notifications.push('Mark as read ' +
-		'|alternate=true' +
-		' font=Menlo size=13' +
-		' bash=' + SCRIPT +
-		' param1=--mark' +
-		' param2=--token=' + channel.token +
-		' param3=' + key + '=' + channel.id +
-		' refresh=true' +
-		' terminal=false');
+	// Temporarily handle the case where a channel that used to be public is now private.
+	// conversations.mark is not publicly available or documented. Only works with xoxs- tokens.
+	// channels.mark and groups.mark does not recognize this type of channel.
+	if (channel.is_channel && channel.is_group) {
 
-	if (!slack_output[channel.token].params[key]) {
-		slack_output[channel.token].params[key] = [];
+	} else {
+		slack_output[channel.token].notifications.push('Mark as read ' +
+			'|alternate=true' +
+			' font=Menlo size=13' +
+			' bash=' + SCRIPT +
+			' param1=--mark' +
+			' param2=--token=' + channel.token +
+			' param3=' + key + '=' + channel.id +
+			' refresh=true' +
+			' terminal=false');
+
+		if (!slack_output[channel.token].params[key]) {
+			slack_output[channel.token].params[key] = [];
+		}
+		slack_output[channel.token].params[key].push(channel.id);
 	}
-	slack_output[channel.token].params[key].push(channel.id);
 }
 
 async function run() {
@@ -211,7 +219,7 @@ function get_team_notifications(token) {
 					'params': {},
 					'errors': []
 				};
-				return get_team_channels(token);
+				return get_team_conversations(token);
 			}
 		})
 		.then((channels) => {
@@ -241,9 +249,9 @@ function get_team_info(token) {
 		});
 }
 
-function get_team_channels(token) {
-	debug('Fetching channels for ' + token);
-	return slack_request(SLACK_USER_CONVERSATIONS, {
+function get_team_conversations(token) {
+	debug('Fetching conversations for ' + token);
+	return slack_request(SLACK_CONVERSATIONS + SLACK_LIST, {
 		'token': token,
 		'exclude_archived': true,
 		'limit': 200,
@@ -252,19 +260,6 @@ function get_team_channels(token) {
 		.then((body) => {
 			if (body && body.channels) {
 				return Promise.resolve(body.channels);
-			}
-		});
-}
-
-function get_user(user, token) {
-	debug('Fetch user info for ' + user);
-	return slack_request(SLACK_USERS + SLACK_INFO, {
-		'token': token,
-		'user': user
-	})
-		.then((body) => {
-			if (body && body.user) {
-				return Promise.resolve(body.user);
 			}
 		});
 }
@@ -280,37 +275,27 @@ async function get_channels_info(channels, token) {
 			continue;
 		}
 
-		req.push(get_channel_info(channel, token));
+		req.push(get_conversation_info(channel, token));
 	}
 	return await Promise.all(req);
 }
 
-function get_channel_info(channel, token) {
-	let url;
-	if (channel.is_channel) {
-		url = SLACK_CHANNELS;
+function get_conversation_info(channel, token) {
+	if (channel.is_channel && !channel.is_private) {
 		debug('Fetch channel info for #' + channel.name + ' (' + channel.id + ')');
 	} else if (channel.is_group) {
-		url = SLACK_GROUPS;
 		debug('Fetch group info for #' + channel.name + ' (' + channel.id + ')');
 	} else {
-		url = SLACK_CONVERSATIONS;
 		debug('Fetch conversation info for ' + channel.id);
 	}
-	return slack_request(url + SLACK_INFO, {
+	return slack_request(SLACK_CONVERSATIONS + SLACK_INFO, {
 		'token': token,
-		'channel': channel.id,
-		'unreads': true
+		'channel': channel.id
 	})
 		.then((body) => {
 			if (body) {
-				if (body.group) {
-					body.channel = body.group;
-				}
-				if (body.channel) {
-					body.channel.shared_team_ids = channel.shared_team_ids;
-					return Promise.resolve(body.channel);
-				}
+				body.channel.shared_team_ids = channel.shared_team_ids;
+				return Promise.resolve(body.channel);
 			}
 		});
 }
@@ -326,37 +311,82 @@ async function check_channels_unread(channels, token) {
 }
 
 function is_channel_unread(channel, token) {
+	return get_unread_count(channel, token)
+		.then((unread_count) => {
+			if (channel && unread_count > 0) {
+				if (channel.is_im) {
+					return get_user(channel.user, token)
+						.then((user) => {
+							if (user) {
+								return Promise.resolve({
+									'id': channel.id,
+									'name': user.name,
+									'count': unread_count,
+									'team': user.team_id,
+									'is_im': true,
+									'token': token
+								});
+							}
+						});
+				} else if (channel.is_member || channel.is_group) {
+					let team = channel.shared_team_ids && channel.shared_team_ids.length > 0 ? channel.shared_team_ids[0] : '';
+					return Promise.resolve({
+						'id': channel.id,
+						'name': channel.name,
+						'count': unread_count,
+						'team': team,
+						'is_channel': channel.is_member && channel.is_channel,
+						'is_group': channel.is_group || (channel.is_channel && channel.is_private),
+						'token': token
+					});
+				}
+			}
+		});
+}
+
+function get_unread_count(channel, token) {
 	// unread_count_display is a count of messages that the calling user has
 	// yet to read that matter to them (this means it excludes things like
 	// join/leave messages)
-	if (channel && channel.unread_count_display > 0) {
-		if (channel.is_im) {
-			return get_user(channel.user, token)
-				.then((user) => {
-					if (user) {
-						return Promise.resolve({
-							'id': channel.id,
-							'name': user.name,
-							'count': channel.unread_count_display,
-							'team': user.team_id,
-							'is_im': true,
-							'token': token
-						});
-					}
-				});
-		} else if (channel.is_member || channel.is_group) {
-			let team = channel.shared_team_ids && channel.shared_team_ids.length > 0 ? channel.shared_team_ids[0] : '';
-			return Promise.resolve({
-				'id': channel.id,
-				'name': channel.name,
-				'count': channel.unread_count_display,
-				'team': team,
-				'is_channel': channel.is_member,
-				'is_group': channel.is_group,
-				'token': token
-			});
-		}
+	// unread_count_display does not show up consistently.
+	// In the case unread_count_display is not present, check conversations.history
+	if (channel && !('unread_count_display' in channel)) {
+		return check_conversation_history(channel, token)
+			.then((unread_count) => {
+				return Promise.resolve(unread_count);
+			})
+	} else {
+		return Promise.resolve(channel.unread_count_display);
 	}
+}
+
+function check_conversation_history(channel, token) {
+	debug('Fetch history for ' + channel.id);
+	return slack_request(SLACK_CONVERSATIONS + SLACK_HISTORY, {
+		'token': token,
+		'channel': channel.id,
+		'oldest': channel.last_read != '0000000000.000000' ? channel.last_read : 0,
+		'unreads': true
+	})
+		.then((body) => {
+			if (body && body.unread_count_display >= 0) {
+				return Promise.resolve(body.unread_count_display);
+			}
+			return Promise.resolve(0);
+		});
+}
+
+function get_user(user, token) {
+	debug('Fetch user info for ' + user);
+	return slack_request(SLACK_USERS + SLACK_INFO, {
+		'token': token,
+		'user': user
+	})
+		.then((body) => {
+			if (body && body.user) {
+				return Promise.resolve(body.user);
+			}
+		});
 }
 
 run();
