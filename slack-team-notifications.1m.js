@@ -51,6 +51,7 @@ const SLACK_ICON_W = 'image=iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAAAAXNS
 let unread_count = 0;
 const slack_output = {};
 const errors = [];
+let call_log = {};
 
 debug('Debugging');
 
@@ -99,6 +100,15 @@ function debug(message) {
 
 function slack_request(URL, query) {
 	debug('  /' + URL + (query.channel ? ' (' + query.channel + ')' : ''));
+	// The following is to keep track of how many calls are being made
+	// for each token to each method. Should help debug the rate limits
+	if (!call_log[query.token]) {
+		call_log[query.token] = {};
+	}
+	if (!call_log[query.token][URL]) {
+		call_log[query.token][URL] = 0;
+	}
+	call_log[query.token][URL]++;
 	return request
 		.get(SLACK_API + URL)
 		.query(query)
@@ -155,6 +165,7 @@ function output() {
 			console.log('--' + errors[i]);
 		}
 	}
+	debug(call_log);
 }
 
 function channel_output(channel) {
@@ -269,9 +280,13 @@ async function get_channels_info(channels, token) {
 	for (let i in channels) {
 		let channel = channels[i];
 
-		if (channel.is_im && channel.is_user_deleted) {
-			continue;
+		if (channel.is_im) {
+			if (channel.is_user_deleted) {
+				continue;
+			}
 		} else if (channel.is_group && !channel.is_open) {
+			continue;
+		} else if (channel.is_archived || !channel.is_member) {
 			continue;
 		}
 
@@ -281,6 +296,11 @@ async function get_channels_info(channels, token) {
 }
 
 function get_conversation_info(channel, token) {
+	// If channel already includes the unread_count_display or last_read
+	// we can skip the .info call and go to the next part
+	if (channel && (channel.unread_count_display || channel.last_read)) {
+		return Promise.resolve(channel);
+	}
 	if (channel.is_channel && !channel.is_private) {
 		debug('Fetch channel info for #' + channel.name + ' (' + channel.id + ')');
 	} else if (channel.is_group) {
@@ -294,6 +314,9 @@ function get_conversation_info(channel, token) {
 	})
 		.then((body) => {
 			if (body) {
+				if (body.group) {
+					body.channel = body.group;
+				}
 				body.channel.shared_team_ids = channel.shared_team_ids;
 				return Promise.resolve(body.channel);
 			}
