@@ -29,6 +29,7 @@ const SLACK_API = 'https://slack.com/api/';
 const SLACK_CONVERSATIONS = 'conversations';
 const SLACK_CHANNELS = 'channels';
 const SLACK_GROUPS = 'groups';
+const SLACK_USERS_CONVERSATIONS = 'users.conversations';
 const SLACK_IM = 'im';
 const SLACK_TEAM = 'team';
 const SLACK_USERS = 'users';
@@ -262,7 +263,7 @@ function get_team_info(token) {
 
 function get_team_conversations(token) {
 	debug('Fetching conversations for ' + token);
-	return slack_request(SLACK_CONVERSATIONS + SLACK_LIST, {
+	return slack_request(SLACK_USERS_CONVERSATIONS, {
 		'token': token,
 		'exclude_archived': true,
 		'limit': 200,
@@ -286,7 +287,7 @@ async function get_channels_info(channels, token) {
 			}
 		} else if (channel.is_group && !channel.is_open) {
 			continue;
-		} else if (channel.is_archived || !channel.is_member) {
+		} else if (channel.is_archived) {
 			continue;
 		}
 
