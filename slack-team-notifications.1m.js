@@ -4,7 +4,7 @@
 
 
 // <bitbar.title>Slack Team Notifications</bitbar.title>
-// <bitbar.version>v1.0.4</bitbar.version>
+// <bitbar.version>v1.0.5</bitbar.version>
 // <bitbar.author>Benji Encalada Mora</bitbar.author>
 // <bitbar.author.github>benjifs</bitbar.author.github>
 // <bitbar.image>https://i.imgur.com/x1SoIto.jpg</bitbar.image>
