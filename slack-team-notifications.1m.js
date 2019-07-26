@@ -17,6 +17,15 @@ const tokens = require('./.tokens.js');
 // Set DARK_MODE = true to force white icon
 const DARK_MODE = process.env.BitBarDarkMode;
 
+// Is Slack.app installed?
+let SLACK_INSTALLED = true;
+const { exec } = require('child_process');
+exec('ls /Applications | grep Slack | wc -l', (err, stdout, stderr) => {
+	if (!err && stdout == 0) {
+		SLACK_INSTALLED = false;
+	}
+});
+
 const DEBUG = process.argv.indexOf('--debug') > 0;
 const SCRIPT = process.argv[1];
 
@@ -180,7 +189,12 @@ function channel_output(channel) {
 	output_str += (channel.count > 10 ? '10+' : channel.count);
 
 	let key = channel.is_im ? SLACK_IM : channel.is_channel ? SLACK_CHANNELS : SLACK_GROUPS;
-	let href = 'slack://channel?team=' + channel.team + '&id=' + channel.id;
+	let href;
+	if (SLACK_INSTALLED) {
+		href = 'slack://channel?team=' + channel.team + '&id=' + channel.id;
+	} else {
+		href = 'https://app.slack.com/client/' + channel.team + '/' + channel.id;
+	}
 
 	slack_output[channel.token].notifications.push(output_str + '|font=Menlo size=13 href=' + href);
 	// Temporarily handle the case where a channel that used to be public is now private.
