@@ -1,6 +1,8 @@
 # Slack Team Notifications
 [Bitbar](https://github.com/matryer/bitbar) plugin to show the notification count from multiple [Slack](https://slack.com) teams and channels. You can also mark channels or whole teams as read.
 
+**The original repo can be found here:** https://github.com/benjifs/bitbar-slack-team-notifications
+
 ![Slack Team Notifications screenshot](https://i.imgur.com/x1SoIto.jpg)
 
 ## Install
@@ -42,3 +44,8 @@ If you cannot use Slack Legacy Tokens, you can generate a token by using [OAuth]
 |`team:read`|Get team name|
 
 The app should also have a valid redirect URL that will received `code` as a GET parameter and then makes a call to Slack's [oauth.access](https://api.slack.com/methods/oauth.access) method to get the final token. You can see a basic sample of how this is handled in the [index.html](https://github.com/benjifs/bitbar-slack-team-notifications/blob/master/index.html) for this plugin.
+
+## Issues
+For any issues or suggestions:
+https://github.com/benjifs/bitbar-slack-team-notifications/issues
+
