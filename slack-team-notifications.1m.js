@@ -2,9 +2,8 @@
 /* jshint esversion: 8 */
 /* jshint asi: true */
 
-
 // <bitbar.title>Slack Team Notifications</bitbar.title>
-// <bitbar.version>v1.0.6</bitbar.version>
+// <bitbar.version>v1.0.7</bitbar.version>
 // <bitbar.author>Benji Encalada Mora</bitbar.author>
 // <bitbar.author.github>benjifs</bitbar.author.github>
 // <bitbar.image>https://i.imgur.com/x1SoIto.jpg</bitbar.image>
@@ -17,7 +16,8 @@ const tokens = require('./.tokens.js');
 // Set DARK_MODE = true to force white icon
 const DARK_MODE = process.env.BitBarDarkMode;
 
-// Only count mentions and DMs
+// If MENTIONS_ONLY is true, the count only includes mentions and DMs.
+// If MENTIONS_ONLY is false, the count includes all unread messages.
 const MENTIONS_ONLY = false;
 
 // Is Slack.app installed?
