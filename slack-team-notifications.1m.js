@@ -17,6 +17,9 @@ const tokens = require('./.tokens.js');
 // Set DARK_MODE = true to force white icon
 const DARK_MODE = process.env.BitBarDarkMode;
 
+// Only count mentions and DMs
+const MENTIONS_ONLY = false;
+
 // Is Slack.app installed?
 let SLACK_INSTALLED = true;
 const { exec } = require('child_process');
@@ -46,6 +49,7 @@ const SLACK_INFO = '.info';
 const SLACK_LIST = '.list';
 const SLACK_MARK = '.mark';
 const SLACK_HISTORY = '.history';
+const SLACK_AUTH_TEST = 'auth.test';
 
 // ICONS {
 // Original Slack icon (unused)
@@ -245,8 +249,12 @@ function get_team_notifications(token) {
 					'params': {},
 					'errors': []
 				};
-				return get_team_conversations(token);
+				return get_auth_info(token);
 			}
+		})
+		.then((user_id) => {
+			slack_output[token]['user_id'] = user_id;
+			return get_team_conversations(token);
 		})
 		.then((channels) => {
 			return get_channels_info(channels, token);
@@ -271,6 +279,18 @@ function get_team_info(token) {
 		.then((body) => {
 			if (body && body.team) {
 				return Promise.resolve(body.team);
+			}
+		});
+}
+
+function get_auth_info(token) {
+	debug('Fetch auth info for ' + token);
+	return slack_request(SLACK_AUTH_TEST, {
+		'token': token
+	}).
+		then((body) => {
+			if (body && body.user_id) {
+				return Promise.resolve(body.user_id);
 			}
 		});
 }
@@ -408,10 +428,24 @@ function check_conversation_history(channel, token) {
 	})
 		.then((body) => {
 			if (body && body.unread_count_display >= 0) {
-				return Promise.resolve(body.unread_count_display);
+				const user_id = slack_output[token]['user_id'];
+				return Promise.resolve(count_mentions(body, user_id));
 			}
 			return Promise.resolve(0);
 		});
+}
+
+function count_mentions(body, user_id) {
+	if (MENTIONS_ONLY && body.messages && body.messages.length > 0) {
+		let count = 0;
+		for (let i in body.messages) {
+			if (body.messages[i].text.indexOf(user_id) >= 0) {
+				count++;
+			}
+		}
+		return count;
+	}
+	return body.unread_count_display;
 }
 
 function get_user(user, token) {
