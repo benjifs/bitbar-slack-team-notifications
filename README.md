@@ -35,13 +35,17 @@ If you cannot use Slack Legacy Tokens, you can generate a token by using [OAuth]
 
 |Permission|Reason|
 |---|---|
-|`channels:read`|Check channel for unread messages|
+|`channels:history`|Check channel for unread messages|
+|`channels:read`|Get channel info|
 |`channels:write`|Mark channel as read|
-|`groups:read`|Check groups for unread messages|
+|`groups:history`|Check groups for unread messages|
+|`groups:read`|Get group info|
 |`groups:write`|Mark group as read|
-|`im:read`|Check IM for unread messages|
+|`im:history`|Check IM for unread messages|
+|`im:read`|Get IM info|
 |`im:write`|Mark IM as read|
-|`mpim:read`|Check mpim for unread messages|
+|`mpim:history`|Check mpim for unread messages|
+|`mpim:read`|Get mpim info|
 |`mpim:write`|Mark mpim as read|
 |`users:read`|If unread IM, get username for user|
 |`team:read`|Get team name|
