@@ -97,7 +97,7 @@ if (process.argv.indexOf('--mark') > 0) {
 		let channels = args[1].split(',');
 		for (let j in channels) {
 			console.log('/' + args[0] + SLACK_MARK + ' (' + channels[j] + ')');
-			slack_request(args[0] + SLACK_MARK, {
+			slack_request(SLACK_CONVERSATIONS + SLACK_MARK, {
 				'token': token,
 				'channel': channels[j],
 				'ts': Math.floor(Date.now() / 1000) + '.000000'
