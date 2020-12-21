@@ -20,7 +20,7 @@ const DARK_MODE = process.env.BitBarDarkMode;
 // If MENTIONS_ONLY is false, the count includes all unread messages.
 const MENTIONS_ONLY = false;
 // MAX_LENGTH of channel name or user name
-const MAX_LENGTH = 15;
+const MAX_LENGTH = 18;
 
 // Is Slack.app installed?
 let SLACK_INSTALLED = true;
@@ -129,6 +129,7 @@ function slack_request(URL, query) {
 		.get(SLACK_API + URL)
 		.query(query)
 		.then((res) => {
+			debug(res.body);
 			if (res && res.body && res.body.ok === true) {
 				return Promise.resolve(res.body);
 			}
