@@ -98,7 +98,7 @@ if (process.argv.indexOf('--mark') > 0) {
 			slack_request(args[0] + SLACK_MARK, {
 				'token': token,
 				'channel': channels[j],
-				'ts': Math.floor(Date.now() / 1000)
+				'ts': Math.floor(Date.now() / 1000) + '.000000'
 			})
 				.then((body) => {
 					// console.log('  Success: ' + args[0] + ':' + channels[j]);
