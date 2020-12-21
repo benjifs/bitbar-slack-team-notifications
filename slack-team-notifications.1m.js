@@ -3,24 +3,29 @@
 /* jshint asi: true */
 
 // <bitbar.title>Slack Team Notifications</bitbar.title>
-// <bitbar.version>v1.0.8</bitbar.version>
+// <bitbar.version>v1.1.0</bitbar.version>
 // <bitbar.author>Benji Encalada Mora</bitbar.author>
 // <bitbar.author.github>benjifs</bitbar.author.github>
-// <bitbar.image>https://i.imgur.com/x1SoIto.jpg</bitbar.image>
+// <bitbar.image>https://i.imgur.com/ORbsRBx.jpg</bitbar.image>
 // <bitbar.desc>Show notifications for Slack teams and channels with option to mark as read.</bitbar.desc>
 // <bitbar.dependencies>node.js superagent</bitbar.dependencies>
 
 const request = require('superagent');
 const tokens = require('./.tokens.js');
 
-// Set DARK_MODE = true to force white icon
-const DARK_MODE = process.env.BitBarDarkMode;
-
+// CONFIG
+// BITBAR_SLACK_ICON defines which Slack Icon is shown
+// 0 -> Original Slack Icon
+// 1 -> White Slack Icon
+// 2 -> Black Slack Icon
+const BITBAR_SLACK_ICON = process.env.BitBarDarkMode ? 1 : 2;
 // If MENTIONS_ONLY is true, the count only includes mentions and DMs.
 // If MENTIONS_ONLY is false, the count includes all unread messages.
 const MENTIONS_ONLY = false;
 // MAX_LENGTH of channel name or user name
 const MAX_LENGTH = 18;
+// Show `No new notifications` message
+const SHOW_ZERO_NOTIFICATIONS = true;
 
 // Is Slack.app installed?
 let SLACK_INSTALLED = true;
@@ -43,7 +48,6 @@ const SLACK_API = 'https://slack.com/api/';
 const SLACK_CONVERSATIONS = 'conversations';
 const SLACK_CHANNELS = 'channels';
 const SLACK_GROUPS = 'groups';
-const SLACK_USERS_CONVERSATIONS = 'users.conversations';
 const SLACK_IM = 'im';
 const SLACK_TEAM = 'team';
 const SLACK_USERS = 'users';
@@ -145,21 +149,22 @@ function slack_request(URL, query) {
 
 function output() {
 	unread_count = unread_count > 10 ? '10+' : unread_count > 0 ? unread_count : '';
+	const slack_icon = BITBAR_SLACK_ICON == 2 ? SLACK_ICON_B : BITBAR_SLACK_ICON == 1 ? SLACK_ICON_W : SLACK_ICON;
 	if (errors.length > 0) {
-		console.log('! |color=red ' + (DARK_MODE ? SLACK_ICON_W : SLACK_ICON_B));
+		console.log('! |color=red ' + slack_icon);
 	} else {
-		console.log(unread_count + ' | ' + (DARK_MODE ? SLACK_ICON_W : SLACK_ICON_B));
+		console.log(unread_count + ' | ' + slack_icon);
 	}
 
 	if (Object.keys(slack_output).length) {
 		for (let i in slack_output) {
 			let team = slack_output[i];
 
-			// Only show team name if there are notifications for this team
-			if (team.notifications.length > 0) {
+			if (SHOW_ZERO_NOTIFICATIONS || team.notifications.length > 0) {
 				console.log('---');
 				console.log(team.name + ' | size=12');
-
+			}
+			if (team.notifications.length > 0) {
 				for (let j in team.notifications) {
 					console.log(team.notifications[j]);
 				}
@@ -172,6 +177,8 @@ function output() {
 					(team.params[SLACK_CHANNELS] ? ' param5=' + SLACK_CHANNELS + '=' + team.params[SLACK_CHANNELS].join() : '') +
 					' refresh=true' +
 					' terminal=false');
+			} else if (SHOW_ZERO_NOTIFICATIONS) {
+				console.log('No new notifications');
 			}
 		}
 	}
@@ -182,6 +189,9 @@ function output() {
 			console.log('--' + errors[i]);
 		}
 	}
+	console.log('---');
+	console.log('Add New Workspace');
+	console.log('--Generate OAuth Token | href=' + SLACK_OAUTH_AUTHORIZE + SLACK_CLIENT_ID);
 	debug(call_log);
 }
 
@@ -204,27 +214,21 @@ function channel_output(channel) {
 	}
 
 	slack_output[channel.token].notifications.push(output_str + '|font=Menlo size=13 href=' + href);
-	// Temporarily handle the case where a channel that used to be public is now private.
-	// conversations.mark is not publicly available or documented. Only works with xoxs- tokens.
-	// channels.mark and groups.mark does not recognize this type of channel.
-	if (channel.is_channel && channel.is_group) {
 
-	} else {
-		slack_output[channel.token].notifications.push('Mark as read ' +
-			'|alternate=true' +
-			' font=Menlo size=13' +
-			' bash=' + SCRIPT +
-			' param1=--mark' +
-			' param2=--token=' + channel.token +
-			' param3=' + key + '=' + channel.id +
-			' refresh=true' +
-			' terminal=false');
+	slack_output[channel.token].notifications.push('Mark as read ' +
+		'|alternate=true' +
+		' font=Menlo size=13' +
+		' bash=' + SCRIPT +
+		' param1=--mark' +
+		' param2=--token=' + channel.token +
+		' param3=' + key + '=' + channel.id +
+		' refresh=true' +
+		' terminal=false');
 
-		if (!slack_output[channel.token].params[key]) {
-			slack_output[channel.token].params[key] = [];
-		}
-		slack_output[channel.token].params[key].push(channel.id);
+	if (!slack_output[channel.token].params[key]) {
+		slack_output[channel.token].params[key] = [];
 	}
+	slack_output[channel.token].params[key].push(channel.id);
 }
 
 async function run() {
@@ -253,14 +257,13 @@ function get_team_notifications(token) {
 					'errors': []
 				};
 				return get_auth_info(token);
+			} else {
+				throw 'Invalid token';
 			}
 		})
 		.then((user_id) => {
 			slack_output[token]['user_id'] = user_id;
 			return get_team_conversations(token);
-		})
-		.then((channels) => {
-			return get_channels_info(channels, token);
 		})
 		.then((channels) => {
 			return check_channels_unread(channels, token);
@@ -271,7 +274,10 @@ function get_team_notifications(token) {
 					channel_output(channels[i]);
 				}
 			}
-		});
+		})
+		.catch((errors) => {
+			debug(errors);
+		})
 }
 
 function get_team_info(token) {
@@ -300,7 +306,7 @@ function get_auth_info(token) {
 
 function get_team_conversations(token) {
 	debug('Fetching conversations for ' + token);
-	return slack_request(SLACK_USERS_CONVERSATIONS, {
+	return slack_request(SLACK_CONVERSATIONS + SLACK_LIST, {
 		'token': token,
 		'exclude_archived': true,
 		'limit': 200,
@@ -309,54 +315,6 @@ function get_team_conversations(token) {
 		.then((body) => {
 			if (body && body.channels) {
 				return Promise.resolve(body.channels);
-			}
-		});
-}
-
-async function get_channels_info(channels, token) {
-	let req = [];
-	for (let i in channels) {
-		let channel = channels[i];
-
-		if (channel.is_im) {
-			if (channel.is_user_deleted) {
-				continue;
-			}
-		} else if (channel.is_group && !channel.is_open) {
-			continue;
-		} else if (channel.is_archived) {
-			continue;
-		}
-
-		req.push(get_conversation_info(channel, token));
-	}
-	return await Promise.all(req);
-}
-
-function get_conversation_info(channel, token) {
-	// If channel already includes the unread_count_display or last_read
-	// we can skip the .info call and go to the next part
-	if (channel && (channel.unread_count_display || channel.last_read)) {
-		return Promise.resolve(channel);
-	}
-	if (channel.is_channel && !channel.is_private) {
-		debug('Fetch channel info for #' + channel.name + ' (' + channel.id + ')');
-	} else if (channel.is_group) {
-		debug('Fetch group info for #' + channel.name + ' (' + channel.id + ')');
-	} else {
-		debug('Fetch conversation info for ' + channel.id);
-	}
-	return slack_request(SLACK_CONVERSATIONS + SLACK_INFO, {
-		'token': token,
-		'channel': channel.id
-	})
-		.then((body) => {
-			if (body) {
-				if (body.group) {
-					body.channel = body.group;
-				}
-				body.channel.shared_team_ids = channel.shared_team_ids;
-				return Promise.resolve(body.channel);
 			}
 		});
 }
@@ -430,8 +388,11 @@ function check_conversation_history(channel, token) {
 		'unreads': true
 	})
 		.then((body) => {
-			if (body && body.unread_count_display >= 0) {
+			if (body && body.unread_count_display > 0) {
 				const user_id = slack_output[token]['user_id'];
+				if (channel.is_im || channel.is_mpim) {
+					return Promise.resolve(body.unread_count_display);
+				}
 				return Promise.resolve(count_mentions(body, user_id));
 			}
 			return Promise.resolve(0);
@@ -442,6 +403,9 @@ function count_mentions(body, user_id) {
 	if (MENTIONS_ONLY && body.messages && body.messages.length > 0) {
 		let count = 0;
 		for (let i in body.messages) {
+			if (i >= body.unread_count_display) {
+				break;
+			}
 			if (body.messages[i].text.indexOf(user_id) >= 0) {
 				count++;
 			}

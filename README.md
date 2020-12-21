@@ -3,7 +3,7 @@
 
 **The original repo can be found here:** https://github.com/benjifs/bitbar-slack-team-notifications
 
-![Slack Team Notifications screenshot](https://i.imgur.com/x1SoIto.jpg)
+![Slack Team Notifications screenshot](https://i.imgur.com/ORbsRBx.jpg)
 
 ## Install
 1. Download and install [Bitbar](https://github.com/matryer/bitbar). You can also install it with [Homebrew](https://brew.sh/) by running `brew cask install bitbar`
@@ -20,9 +20,19 @@ ln -s {CLONED_REPO_DIRECTORY}/slack-team-notifications.1m.js slack-team-notifica
 
 ## Configure
 
-If you'd only like to see the count for mentions and DMs, changes the `MENTIONS_ONLY` constant to true.
+The following configuration options are available in the [slack-team-notifications.1m.js](slack-team-notifications.1m.js) file:
+|OPTION|DESCRIPTION|DEFAULT VALUE|
+|---|---|---|
+|`BITBAR_SLACK_ICON`|Defines which Slack icon is used|If System Dark Mode is enabled the default value is `1`, otherwise it is `2`|
+|`MENTIONS_ONLY`|Count only @mentions and DMs|false|
+|`MAX_LENGTH`|Maximum length of channel name to display|18|
+|`SHOW_ZERO_NOTIFICATIONS`|Shows "No new notifications" if `true` or omit the channel if `false`|true|
+
+## Tokens
 
 You will need to get your [Slack Legacy Tokens](https://api.slack.com/custom-integrations/legacy-tokens) for every team you want to get notifications from. After getting the legacy tokens, add them to the `.tokens.js` file:
+
+> **NOTE:** [Slack Legacy Tokens were deprecated on May 5th, 2020](https://api.slack.com/changelog/2020-02-legacy-test-token-creation-to-retire). You can still use old legacy tokens but new ones cannot be created anymore.
 
 ```
 module.exports = [
@@ -55,4 +65,3 @@ The app should also have a valid redirect URL that will received `code` as a GET
 ## Issues
 For any issues or suggestions:
 https://github.com/benjifs/bitbar-slack-team-notifications/issues
-
