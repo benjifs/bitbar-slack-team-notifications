@@ -19,6 +19,8 @@ const DARK_MODE = process.env.BitBarDarkMode;
 // If MENTIONS_ONLY is true, the count only includes mentions and DMs.
 // If MENTIONS_ONLY is false, the count includes all unread messages.
 const MENTIONS_ONLY = false;
+// MAX_LENGTH of channel name or user name
+const MAX_LENGTH = 15;
 
 // Is Slack.app installed?
 let SLACK_INSTALLED = true;
@@ -186,10 +188,10 @@ function channel_output(channel) {
 	unread_count += channel.count;
 
 	let output_str = (channel.is_im ? '@' : '#') + channel.name;
-	if (output_str.length > 15) {
-		output_str = output_str.substring(0, 14) + '…';
+	if (output_str.length > MAX_LENGTH) {
+		output_str = output_str.substring(0, MAX_LENGTH - 1) + '…';
 	}
-	output_str += ' '.repeat(17 - output_str.length);
+	output_str += ' '.repeat(MAX_LENGTH + 2 - output_str.length);
 	output_str += (channel.count > 10 ? '10+' : channel.count);
 
 	let key = channel.is_im ? SLACK_IM : channel.is_channel ? SLACK_CHANNELS : SLACK_GROUPS;
