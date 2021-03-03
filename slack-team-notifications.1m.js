@@ -101,8 +101,7 @@ if (process.argv.indexOf('--mark') > 0) {
 		let channels = args[1].split(',');
 		for (let j in channels) {
 			console.log('/' + args[0] + SLACK_MARK + ' (' + channels[j] + ')');
-			slack_request(SLACK_CONVERSATIONS + SLACK_MARK, {
-				'token': token,
+			slack_request(SLACK_CONVERSATIONS + SLACK_MARK, token, {
 				'channel': channels[j],
 				'ts': Math.floor(Date.now() / 1000) + '.000000'
 			})
@@ -118,20 +117,21 @@ function debug(message) {
 	return DEBUG && console.log(message);
 }
 
-function slack_request(URL, query) {
-	debug('  /' + URL + (query.channel ? ' (' + query.channel + ')' : ''));
+function slack_request(URL, token, query) {
+	debug('  /' + URL + (query && query.channel ? ' (' + query.channel + ')' : ''));
 	// The following is to keep track of how many calls are being made
 	// for each token to each method. Should help debug the rate limits
-	if (!call_log[query.token]) {
-		call_log[query.token] = {};
+	if (!call_log[token]) {
+		call_log[token] = {};
 	}
-	if (!call_log[query.token][URL]) {
-		call_log[query.token][URL] = 0;
+	if (!call_log[token][URL]) {
+		call_log[token][URL] = 0;
 	}
-	call_log[query.token][URL]++;
+	call_log[token][URL]++;
 	return request
 		.get(SLACK_API + URL)
 		.query(query)
+		.auth(token, { type: 'bearer' })
 		.then((res) => {
 			debug(res.body);
 			if (res && res.body && res.body.ok === true) {
@@ -324,9 +324,7 @@ function get_team_notifications(token) {
 
 function get_team_info(token) {
 	debug('Fetching team info for ' + token);
-	return slack_request(SLACK_TEAM + SLACK_INFO, {
-		'token': token
-	})
+	return slack_request(SLACK_TEAM + SLACK_INFO, token)
 		.then((body) => {
 			if (body && body.team) {
 				return Promise.resolve(body.team);
@@ -336,10 +334,8 @@ function get_team_info(token) {
 
 function get_auth_info(token) {
 	debug('Fetch auth info for ' + token);
-	return slack_request(SLACK_AUTH_TEST, {
-		'token': token
-	}).
-		then((body) => {
+	return slack_request(SLACK_AUTH_TEST, token)
+		.then((body) => {
 			if (body && body.user_id) {
 				return Promise.resolve(body.user_id);
 			}
@@ -348,8 +344,7 @@ function get_auth_info(token) {
 
 function get_team_conversations(token) {
 	debug('Fetching conversations for ' + token);
-	return slack_request(SLACK_CONVERSATIONS + SLACK_LIST, {
-		'token': token,
+	return slack_request(SLACK_CONVERSATIONS + SLACK_LIST, token, {
 		'exclude_archived': true,
 		'limit': 200,
 		'types': 'public_channel,private_channel,mpim,im'
@@ -423,8 +418,7 @@ function get_unread_count(channel, token) {
 
 function check_conversation_history(channel, token) {
 	debug('Fetch history for ' + channel.id);
-	return slack_request(SLACK_CONVERSATIONS + SLACK_HISTORY, {
-		'token': token,
+	return slack_request(SLACK_CONVERSATIONS + SLACK_HISTORY, token, {
 		'channel': channel.id,
 		'oldest': channel.last_read != '0000000000.000000' ? channel.last_read : 0,
 		'unreads': true
@@ -459,8 +453,7 @@ function count_mentions(body, user_id) {
 
 function get_user(user, token) {
 	debug('Fetch user info for ' + user);
-	return slack_request(SLACK_USERS + SLACK_INFO, {
-		'token': token,
+	return slack_request(SLACK_USERS + SLACK_INFO, token, {
 		'user': user
 	})
 		.then((body) => {
