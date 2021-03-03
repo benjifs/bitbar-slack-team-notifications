@@ -3,7 +3,7 @@
 /* jshint asi: true */
 
 // <bitbar.title>Slack Team Notifications</bitbar.title>
-// <bitbar.version>v1.1.0</bitbar.version>
+// <bitbar.version>v1.1.1</bitbar.version>
 // <bitbar.author>Benji Encalada Mora</bitbar.author>
 // <bitbar.author.github>benjifs</bitbar.author.github>
 // <bitbar.image>https://i.imgur.com/ORbsRBx.jpg</bitbar.image>
