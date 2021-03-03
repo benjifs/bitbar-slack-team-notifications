@@ -160,13 +160,22 @@ function output() {
 		for (let i in slack_output) {
 			let team = slack_output[i];
 
-			if (SHOW_ZERO_NOTIFICATIONS || team.notifications.length > 0) {
+			if (SHOW_ZERO_NOTIFICATIONS || team.notifications.count > 0) {
 				console.log('---');
 				console.log(team.name + ' | size=12');
 			}
-			if (team.notifications.length > 0) {
-				for (let j in team.notifications) {
-					console.log(team.notifications[j]);
+			if (team.notifications.count > 0) {
+				if (team.notifications.channels.length > 0) {
+					console.log('Channels | size=12');
+					for (let j in team.notifications.channels) {
+						console.log(team.notifications.channels[j]);
+					}
+				}
+				if (team.notifications.dms.length > 0) {
+					console.log('Direct messages | size=12');
+					for (let j in team.notifications.dms) {
+						console.log(team.notifications.dms[j]);
+					}
 				}
 				console.log('Mark all as read ' +
 					'|bash=' + SCRIPT +
@@ -195,13 +204,33 @@ function output() {
 	debug(call_log);
 }
 
+function format_channel_name(channel) {
+	let name = '';
+	if (channel.is_im) {
+		name = '@' + channel.name;
+	} else if (channel.name.indexOf('mpdm-') === 0) {
+		let users = channel.name.split('-');
+		users = users.filter((user, i) => {
+			// mpdm string is of this format: `mpdm-xxxxx--yyyyy--zzzzz-n`
+			// where xxxxx, yyyyy, and zzzzz are usernames
+			// Remove empty strings, first, and last elements of the array
+			return user !== '' && i !== 0 && i !== users.length - 1;
+		});
+		// Using │ since bitbar can not display the standard | character
+		name = '@' + users.join('│@');
+	} else {
+		name = '#' + channel.name;
+	}
+	if (name.length > MAX_LENGTH) {
+		name = name.substring(0, MAX_LENGTH - 1) + '…';
+	}
+	return name;
+}
+
 function channel_output(channel) {
 	unread_count += channel.count;
 
-	let output_str = (channel.is_im ? '@' : '#') + channel.name;
-	if (output_str.length > MAX_LENGTH) {
-		output_str = output_str.substring(0, MAX_LENGTH - 1) + '…';
-	}
+	let output_str = format_channel_name(channel);
 	output_str += ' '.repeat(MAX_LENGTH + 2 - output_str.length);
 	output_str += (channel.count > 10 ? '10+' : channel.count);
 
@@ -213,9 +242,8 @@ function channel_output(channel) {
 		href = 'https://app.slack.com/client/' + channel.team + '/' + channel.id;
 	}
 
-	slack_output[channel.token].notifications.push(output_str + '|font=Menlo size=13 href=' + href);
-
-	slack_output[channel.token].notifications.push('Mark as read ' +
+	output_str += '|font=Menlo size=13 href=' + href;
+	let alt_str = 'Mark as read ' +
 		'|alternate=true' +
 		' font=Menlo size=13' +
 		' bash=' + SCRIPT +
@@ -223,7 +251,16 @@ function channel_output(channel) {
 		' param2=--token=' + channel.token +
 		' param3=' + key + '=' + channel.id +
 		' refresh=true' +
-		' terminal=false');
+		' terminal=false';
+
+	if (output_str[0] == '@') {
+		slack_output[channel.token].notifications.dms.push(output_str);
+		slack_output[channel.token].notifications.dms.push(alt_str);
+	} else {
+		slack_output[channel.token].notifications.channels.push(output_str);
+		slack_output[channel.token].notifications.channels.push(alt_str);
+	}
+	slack_output[channel.token].notifications.count++;
 
 	if (!slack_output[channel.token].params[key]) {
 		slack_output[channel.token].params[key] = [];
@@ -252,7 +289,12 @@ function get_team_notifications(token) {
 					'id': team.id,
 					'name': team.name,
 					'token': token,
-					'notifications': [],
+					'notifications': {
+						'channels': [],
+						'groups': [],
+						'dms': [],
+						'count': 0
+					},
 					'params': {},
 					'errors': []
 				};
