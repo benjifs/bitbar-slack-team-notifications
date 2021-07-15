@@ -1,18 +1,18 @@
 # Slack Team Notifications
-[Bitbar](https://github.com/matryer/bitbar) plugin to show the notification count from multiple [Slack](https://slack.com) teams and channels. You can also mark channels or whole teams as read.
+[xbar](https://github.com/matryer/xbar) plugin to show the notification count from multiple [Slack](https://slack.com) teams and channels. You can also mark channels or whole teams as read.
 
 **The original repo can be found here:** https://github.com/benjifs/bitbar-slack-team-notifications
 
 ![Slack Team Notifications screenshot](https://i.imgur.com/ORbsRBx.jpg)
 
 ## Install
-1. Download and install [Bitbar](https://github.com/matryer/bitbar). You can also install it with [Homebrew](https://brew.sh/) by running `brew cask install bitbar`
+1. Download and install [xbar](https://github.com/matryer/xbar). You can also install it with [Homebrew](https://brew.sh/) by running `brew install xbar`
 
-2. Clone this repo to a directory of your choice. You will symlink the executable file afterwards to your bitbar plugins folder
+2. Clone this repo to a directory of your choice. You will symlink the executable file afterwards to your xbar plugins folder
 
 3. Inside the cloned directory, run `npm install`
 
-4. Navigate to your bitbar plugins folder and symlink `slack-team-notifications.1m.js`
+4. Navigate to your xbar plugins folder and symlink `slack-team-notifications.1m.js`
 
 ```
 ln -s {CLONED_REPO_DIRECTORY}/slack-team-notifications.1m.js slack-team-notifications.1m.js
@@ -23,7 +23,7 @@ ln -s {CLONED_REPO_DIRECTORY}/slack-team-notifications.1m.js slack-team-notifica
 The following configuration options are available in the [slack-team-notifications.1m.js](slack-team-notifications.1m.js) file:
 |OPTION|DESCRIPTION|DEFAULT VALUE|
 |---|---|---|
-|`BITBAR_SLACK_ICON`|Defines which Slack icon is used|If System Dark Mode is enabled the default value is `1`, otherwise it is `2`|
+|`XBAR_SLACK_ICON`|Defines which Slack icon is used|If System Dark Mode is enabled the default value is `1`, otherwise it is `2`|
 |`MENTIONS_ONLY`|Count only @mentions and DMs|false|
 |`MAX_LENGTH`|Maximum length of channel name to display|18|
 |`SHOW_ZERO_NOTIFICATIONS`|Shows "No new notifications" if `true` or omit the channel if `false`|true|
