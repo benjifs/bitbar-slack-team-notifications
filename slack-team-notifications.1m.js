@@ -178,7 +178,7 @@ function output() {
 					}
 				}
 				console.log('Mark all as read ' +
-					'|bash=' + SCRIPT +
+					'|shell="${SCRIPT}"' +
 					' param1=--mark' +
 					' param2=--token=' + team.token +
 					(team.params[SLACK_IM] ? ' param3=' + SLACK_IM + '=' + team.params[SLACK_IM].join() : '') +
@@ -246,7 +246,7 @@ function channel_output(channel) {
 	let alt_str = 'Mark as read ' +
 		'|alternate=true' +
 		' font=Menlo size=13' +
-		' bash=' + SCRIPT +
+		' shell="${SCRIPT}"' +
 		' param1=--mark' +
 		' param2=--token=' + channel.token +
 		' param3=' + key + '=' + channel.id +
