@@ -3,7 +3,7 @@
 /* jshint asi: true */
 
 // <xbar.title>Slack Team Notifications</xbar.title>
-// <xbar.version>v1.1.3</xbar.version>
+// <xbar.version>v1.1.4</xbar.version>
 // <xbar.author>Benji Encalada Mora</xbar.author>
 // <xbar.author.github>benjifs</xbar.author.github>
 // <xbar.image>https://i.imgur.com/ORbsRBx.jpg</xbar.image>
@@ -464,4 +464,3 @@ function get_user(user, token) {
 }
 
 run();
-

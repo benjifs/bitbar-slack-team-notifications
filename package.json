@@ -1,6 +1,6 @@
 {
   "name": "bitbar-slack-team-notifications",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Show notifications for Slack teams and channels with option to mark as read.",
   "main": "slack-team-notifications.1m.js",
   "scripts": {
@@ -22,6 +22,6 @@
   },
   "homepage": "https://github.com/benjifs/bitbar-slack-team-notifications#readme",
   "dependencies": {
-    "superagent": "^6.1.0"
+    "superagent": "^8.0.6"
   }
 }
